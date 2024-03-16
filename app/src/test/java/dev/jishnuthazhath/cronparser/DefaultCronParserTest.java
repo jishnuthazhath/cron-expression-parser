@@ -122,7 +122,8 @@ class DefaultCronParserTest {
                 arguments("10-20,30-40/3", Arrays.asList(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 33, 36, 39)),
                 arguments("10/5,20/3", Arrays.asList(10, 15, 20, 23, 25, 26, 29, 30, 32, 35, 38, 40, 41, 44, 45, 47, 50, 53, 55, 56, 59)),
                 arguments("10-20/5,30-40/5", Arrays.asList(10, 15, 20, 30, 35, 40)),
-                arguments("1", Arrays.asList(1))
+                arguments("1", Arrays.asList(1)),
+                arguments("10-10", Arrays.asList(10))
         );
     }
 
