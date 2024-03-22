@@ -22,7 +22,7 @@ public class DefaultCronParser implements CronParser{
     private static final int DAY_OF_MONTH_MAX_VALUE = 31;
     private static final int MONTH_MIN_VALUE = 1;
     private static final int MONTH_MAX_VALUE = 12;
-    private static final int WEEK_MIN_VALUE = 0;
+    private static final int WEEK_MIN_VALUE = 1;
     private static final int WEEK_MAX_VALUE = 7;
 
     public DefaultCronParser(CronExpressionValidator cronExpressionValidator) {
@@ -39,7 +39,7 @@ public class DefaultCronParser implements CronParser{
         String [] argsArr = argument.split("\\s");
 
         // We don't want users to send a bad expression.
-        if (argsArr.length != 6) {
+        if (argsArr.length < 6) {
             throw new CronParseException("Cron expression doesn't look right.");
         }
 
@@ -48,7 +48,7 @@ public class DefaultCronParser implements CronParser{
         String dayOfMonthArg = argsArr[2];
         String monthArg = argsArr[3];
         String weekArg = argsArr[4];
-        String command = argsArr[5];
+        String command = getCommand(argsArr, 5);
 
         return new CronParsedResult(
                 parseMinute(minuteArg),
@@ -58,6 +58,15 @@ public class DefaultCronParser implements CronParser{
                 parseWeek(weekArg),
                 command
         );
+    }
+
+    private String getCommand(String [] arr, int idx) {
+        List<String> strList = new ArrayList<>();
+
+        for (int i=idx; i<arr.length; i++) {
+            strList.add(arr[i]);
+        }
+        return String.join(" ", strList);
     }
 
     /**
@@ -132,12 +141,14 @@ public class DefaultCronParser implements CronParser{
      * In the end we are need each result sorted. If we use a Set we need to convert it to List and sort it.
      * We could use a TreeSet for a sorted set, but element insertion is costly when compared.
      *
+     * 5/10 * * * * bin/find
+     *
      * Note that we are dealing with a very small set of data here and using any of the above shouldn't be a concern. :D
      */
     private List<Integer> buildValues(String s, int minValue, int maxValue) {
         // All the values
         if (s.equals("*")) {
-            return getValueSet(minValue, maxValue, 1);
+            return getValueSetWrapAround(minValue, maxValue, 1, minValue, maxValue);
         }
 
         // If the sub-expression contains a comma, it is listing multiple values.
@@ -150,6 +161,7 @@ public class DefaultCronParser implements CronParser{
                 // Removing the duplicates. Yes. If we do not need duplicates in my datastructure we could have used a Set.
                 // Why the extra iteration overhead ?. My reasoning is that, Lists keep the insertion order. I would like to keep it like that.
                 // Open for discussion.
+                // 5-10,4-30,
                 List<Integer> values = buildValues(string, minValue, maxValue)
                         .stream()
                         .filter(x -> !tempList.contains(x))
@@ -162,6 +174,7 @@ public class DefaultCronParser implements CronParser{
         // If the sub-expression contains a forward slash, it is an incrementer operator.
         // Example, 5/4. Here I am assuming that the value after the incrementer operator cannot be another sub-expression.
         // Only the value before the incrementer operator is a sub-expression.
+        // 5-20/2
         if (s.contains("/")) {
             String [] incrementerSplit = s.split("/");
             List<Integer> left = buildValues(incrementerSplit[0], minValue, maxValue);
@@ -169,7 +182,7 @@ public class DefaultCronParser implements CronParser{
 
             // When the value before the incrementer operator is another sub-expression Or a single value
             int to = left.size() == 1 ? maxValue : left.get(left.size() - 1);
-            return getValueSet(left.get(0), to, right);
+            return getValueSetWrapAround(left.get(0), to, right, minValue, maxValue);
         }
 
         // If the sub-expression contains a dash, it is a range operator. It denotes a range of values.
@@ -178,11 +191,29 @@ public class DefaultCronParser implements CronParser{
             int left = Integer.parseInt(incrementerSplit[0]);
             int right = Integer.parseInt(incrementerSplit[1]);
 
-            return getValueSet(left, right, 1);
+            return getValueSetWrapAround(left, right, 1, minValue, maxValue);
         }
 
         // If it does not contain any of the special characters we can safely assume it is an integer
         return List.of(Integer.parseInt(s));
+    }
+
+    private List<Integer> getValueSetWrapAround(int from, int to, int incr, int minValue, int maxValue) {
+        List<Integer> result = new ArrayList<>();
+        if (from < minValue)
+        {
+            from = minValue;
+        }
+
+        if (from > to) {
+           result.addAll(getValueSet(from, maxValue, incr));
+           for (int i=minValue; i<=to; i++) {
+               result.add(i);
+           }
+        } else {
+            return getValueSet(from, to, incr);
+        }
+        return result;
     }
 
     private List<Integer> getValueSet(int from, int to, int incrementer) {

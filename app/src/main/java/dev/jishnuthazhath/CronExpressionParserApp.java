@@ -6,7 +6,7 @@ public class CronExpressionParserApp {
     /**
      * This is the starting point of the application.
      * The arguments must be in the following format as a single string.
-     * 0/15 0 1,15 * 1-5 /usr/bin/find
+     * 0/15 0 1,15 * 1-5 /usr/bin/find -v foo
      * Prints an output to the standard out
 
      * minute 0 15 30 45
@@ -14,7 +14,10 @@ public class CronExpressionParserApp {
      * day of month 1 15
      * month 1 2 3 4 5 6 7 8 9 10 11 12
      * day of week 1 2 3 4 5
-     * command /usr/bin/find
+     * command /usr/bin/find -v foo
+     *
+     * 5-7 -> 5,6,7
+     * 5-2 -> 5,6,7,1,2
      */
     public static void main(String... args) {
         if (args == null || args.length == 0) {

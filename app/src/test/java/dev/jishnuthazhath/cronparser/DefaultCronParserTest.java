@@ -219,20 +219,21 @@ class DefaultCronParserTest {
     public static Stream<Arguments> weekTestArgumentsProvider() {
         return Stream.of(
                 arguments("5/4", Arrays.asList(5)),
-                arguments("*/7", Arrays.asList(0, 7)),
-                arguments("*", Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7)),
+                arguments("*/7", Arrays.asList(1)),
+                arguments("*", Arrays.asList(1, 2, 3, 4, 5, 6, 7)),
                 arguments("2-7", Arrays.asList(2, 3, 4, 5, 6, 7)),
                 arguments("1,7", Arrays.asList(1, 7)),
-                arguments("0-3,5-7", Arrays.asList(0, 1, 2, 3, 5, 6, 7)),
+                arguments("0-3,5-7", Arrays.asList(1, 2, 3, 5, 6, 7)),
                 arguments("1-5/2", Arrays.asList(1, 3, 5)),
                 arguments("1,3,4,5,6,7", Arrays.asList(1, 3, 4, 5, 6, 7)),
-                arguments("0-2,3-4,5-7", Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7)),
-                arguments("0-3,4/2", Arrays.asList(0, 1, 2, 3, 4, 6)),
-                arguments("5/2,0/3", Arrays.asList(0, 3, 5, 6, 7)),
+                arguments("0-2,3-4,5-7", Arrays.asList(1, 2, 3, 4, 5, 6, 7)),
+                arguments("0-3,4/2", Arrays.asList(1, 2, 3, 4, 6)),
+                arguments("5/2,0/3", Arrays.asList(3, 5, 6, 7)),
                 arguments("5/2,5/2", Arrays.asList(5, 7)),
-                arguments("0-4/2,5-7/1", Arrays.asList(0, 2, 4, 5, 6, 7)),
+                arguments("0-4/2,5-7/1", Arrays.asList(2, 4, 5, 6, 7)),
                 arguments("5", Arrays.asList(5)),
-                arguments("7-7", Arrays.asList(7))
+                arguments("7-7", Arrays.asList(7)),
+                arguments("5-2", Arrays.asList(1,2,5,6,7))
         );
     }
 
@@ -270,5 +271,11 @@ class DefaultCronParserTest {
         assertEquals(result.getMonth(), List.of(1,2,3,4,5,6,7,8,9,10,11,12));
         assertEquals(result.getDayOfWeek(), List.of(1,2,3,4,5));
         assertEquals(result.getCommand(), "/usr/bin/find");
+    }
+
+    @Test
+    public void moreArgumentsIntheCommand() {
+        CronParsedResult result = defaultCronParser.parse("0/15 0 1,15 * 1-5 /usr/bin/find -v foo");
+        assertEquals("/usr/bin/find -v foo", result.getCommand());
     }
 }
